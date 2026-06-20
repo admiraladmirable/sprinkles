@@ -159,6 +159,14 @@ pub struct EmitterTime {
     /// Defaults to `0.0`.
     #[serde(skip_serializing_if = "is_zero_f32")]
     pub spawn_time_randomness: f32,
+    /// Maximum random delay before a particle begins its lifecycle, in seconds.
+    ///
+    /// Each particle waits a random duration in `[0, spawn_delay_spread]` before becoming
+    /// visible and subject to physics. The full lifetime begins once the delay elapses, so
+    /// the total visible duration of the effect is at most `lifetime + spawn_delay_spread`.
+    /// Defaults to `0.0`.
+    #[serde(skip_serializing_if = "is_zero_f32")]
+    pub spawn_delay_spread: f32,
     /// Fixed frame rate for the particle simulation, in frames per second.
     ///
     /// When set to a non-zero value, the particle system updates at this fixed rate
@@ -183,6 +191,7 @@ impl Default for EmitterTime {
             one_shot: false,
             explosiveness: 0.0,
             spawn_time_randomness: 0.0,
+            spawn_delay_spread: 0.0,
             fixed_fps: 0,
             fixed_seed: None,
         }
@@ -357,6 +366,72 @@ pub enum TransformAlign {
     BillboardFixedY,
 }
 
+/// Flipbook animation settings for spritesheet (sprite atlas) textures.
+///
+/// Set this on [`EmitterDrawPass`] to animate the particle's `base_color_texture`
+/// through frames of a spritesheet over each particle's lifetime.
+///
+/// The texture is divided into a uniform grid of `columns × rows` tiles.
+/// Each particle steps through frames from top-left to bottom-right.
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect, PartialEq)]
+pub struct Flipbook {
+    /// Number of columns in the spritesheet grid.
+    pub columns: u32,
+    /// Number of rows in the spritesheet grid.
+    pub rows: u32,
+    /// Total number of animation frames. Defaults to `columns × rows` when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame_count: Option<u32>,
+    /// Playback speed multiplier. `1.0` plays exactly one loop over the particle's lifetime.
+    #[serde(
+        default = "default_flipbook_speed",
+        skip_serializing_if = "is_default_flipbook_speed"
+    )]
+    pub speed: f32,
+}
+
+fn default_flipbook_speed() -> f32 {
+    1.0
+}
+
+fn is_default_flipbook_speed(v: &f32) -> bool {
+    (*v - 1.0).abs() < f32::EPSILON
+}
+
+impl Default for Flipbook {
+    fn default() -> Self {
+        Self {
+            columns: 4,
+            rows: 4,
+            frame_count: None,
+            speed: 1.0,
+        }
+    }
+}
+
+impl Flipbook {
+    /// Returns a sanitized column count for shader use.
+    pub fn effective_columns(&self) -> u32 {
+        self.columns.max(1)
+    }
+
+    /// Returns a sanitized row count for shader use.
+    pub fn effective_rows(&self) -> u32 {
+        self.rows.max(1)
+    }
+
+    /// Returns the effective frame count, defaulting to columns * rows and clamping
+    /// to the available cells.
+    pub fn effective_frame_count(&self) -> u32 {
+        let cell_count = self
+            .effective_columns()
+            .saturating_mul(self.effective_rows());
+        self.frame_count
+            .unwrap_or(cell_count)
+            .clamp(1, cell_count.max(1))
+    }
+}
+
 /// Configuration for how particles are rendered in a single draw pass.
 #[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 #[serde(default)]
@@ -384,6 +459,11 @@ pub struct EmitterDrawPass {
     /// Defaults to `false`.
     #[serde(skip_serializing_if = "is_false")]
     pub use_local_coords: bool,
+    /// Optional flipbook (spritesheet) animation. When set, the particle's
+    /// `base_color_texture` is treated as a sprite atlas and animated over
+    /// the particle's lifetime according to these settings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flipbook: Option<Flipbook>,
 }
 
 impl Default for EmitterDrawPass {
@@ -395,6 +475,7 @@ impl Default for EmitterDrawPass {
             shadow_caster: true,
             transform_align: None,
             use_local_coords: false,
+            flipbook: None,
         }
     }
 }

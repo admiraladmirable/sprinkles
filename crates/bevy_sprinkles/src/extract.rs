@@ -222,7 +222,7 @@ pub struct EmitterUniforms {
     pub trail_history_write_index: u32,
     pub trail_effective_fps: f32,
     pub _trail_pad0: u32,
-    pub _trail_pad1: u32,
+    pub spawn_delay_spread: f32,
 }
 
 #[derive(Resource, Default)]
@@ -548,7 +548,7 @@ fn build_base_uniforms(
         trail_history_write_index: 0,
         trail_effective_fps: 60.0,
         _trail_pad0: 0,
-        _trail_pad1: 0,
+        spawn_delay_spread: emitter.time.spawn_delay_spread,
     }
 }
 

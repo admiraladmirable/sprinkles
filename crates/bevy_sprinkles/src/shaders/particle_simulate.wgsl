@@ -151,7 +151,7 @@ struct EmitterParams {
     trail_history_write_index: u32,
     trail_effective_fps: f32,
     _trail_pad0: u32,
-    _trail_pad1: u32,
+    spawn_delay_spread: f32,
 }
 
 struct Collider {
@@ -1348,7 +1348,8 @@ fn spawn_particle(idx: u32) -> Particle {
     if (params.draw_order == DRAW_ORDER_INDEX) {
         spawn_index = f32(params.cycle * params.amount + idx);
     }
-    p.custom = vec4(0.0, spawn_index, bitcast<f32>(seed), bitcast<f32>(PARTICLE_FLAG_ACTIVE));
+    let spawn_delay = hash_to_float(seed + 5u) * params.spawn_delay_spread;
+    p.custom = vec4(-spawn_delay, spawn_index, bitcast<f32>(seed), bitcast<f32>(PARTICLE_FLAG_ACTIVE));
 
     p.angles = vec4(compute_angles(seed + 70u, 0.0, lifetime), 0.0);
 
@@ -1374,6 +1375,11 @@ fn update_particle(p_in: Particle) -> Particle {
     let dt = params.delta_time;
     let age = p.custom.x + dt;
     p.custom.x = age;
+
+    if (age < 0.0) {
+        p.position.w = 0.0;
+        return p;
+    }
 
     let lifetime = p.velocity.w;
 

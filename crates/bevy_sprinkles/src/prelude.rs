@@ -4,7 +4,7 @@ pub use crate::asset::{
     AnimatedVelocity, ColliderData, Curve, CurveEasing, CurveMode, CurvePoint, CurveTexture,
     DrawOrder, DrawPassMaterial, EmissionShape, EmitterAccelerations, EmitterCollision,
     EmitterCollisionMode, EmitterColors, EmitterData, EmitterDrawPass, EmitterEmission,
-    EmitterScale, EmitterTime, EmitterTrail, EmitterTurbulence, EmitterVelocities,
+    EmitterScale, EmitterTime, EmitterTrail, EmitterTurbulence, EmitterVelocities, Flipbook,
     Gradient as ParticleGradient, GradientInterpolation, GradientStop, InitialTransform,
     ParticleFlags, ParticleMesh, ParticlesAsset, ParticlesAuthors, ParticlesColliderShape3D,
     ParticlesDimension, QuadOrientation, Range as ParticleRange, RibbonTrailShape,

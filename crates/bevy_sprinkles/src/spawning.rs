@@ -641,6 +641,7 @@ pub fn write_emitter_uniforms(
         let trail_size = emitter_data.trail_size();
         let trail_thickness_curve = bake_thickness_curve(&emitter_data.trail);
 
+        let flipbook = emitter_data.draw_pass.flipbook.as_ref();
         let uniforms = ParticleEmitterUniforms {
             emitter_transform: global_transform.to_matrix(),
             max_particles: buffer_handle.max_particles,
@@ -649,6 +650,11 @@ pub fn write_emitter_uniforms(
             trail_size,
             transform_align: transform_align_to_u32(emitter_data.draw_pass.transform_align),
             trail_thickness_curve,
+            flipbook_enabled: flipbook.is_some() as u32,
+            flipbook_columns: flipbook.map_or(1, |f| f.effective_columns()),
+            flipbook_rows: flipbook.map_or(1, |f| f.effective_rows()),
+            flipbook_frame_count: flipbook.map_or(1, |f| f.effective_frame_count()),
+            flipbook_speed: flipbook.map_or(1.0, |f| f.speed),
         };
 
         if let Some(buffer) = buffers.get_mut(&buffer_handle.emitter_uniforms_buffer) {

@@ -20,6 +20,11 @@ struct ParticleEmitterUniforms {
     trail_size: u32,
     transform_align: u32,
     trail_thickness_curve: array<f32, 16>,
+    flipbook_enabled: u32,
+    flipbook_columns: u32,
+    flipbook_rows: u32,
+    flipbook_frame_count: u32,
+    flipbook_speed: f32,
 }
 
 struct CurveUniform {

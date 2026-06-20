@@ -140,6 +140,15 @@ preset_textures!(
     (Window4, "Window 4", "assets/window_04.png"),
 );
 
+#[cfg(feature = "preset-textures")]
+include!(concat!(env!("OUT_DIR"), "/flipbook_list.rs"));
+
+/// Registers all Brackeys VFX Bundle flipbook textures as embedded assets in the Bevy app.
+#[cfg(feature = "preset-textures")]
+pub fn register_flipbook_textures(app: &mut App) {
+    include!(concat!(env!("OUT_DIR"), "/flipbook_embeds.rs"));
+}
+
 /// A reference to a texture that can be loaded at runtime.
 #[derive(Debug, Clone, Serialize, Deserialize, Reflect, Hash, PartialEq, Eq)]
 pub enum TextureRef {

@@ -38,6 +38,13 @@ pub fn time_section(asset_server: &AssetServer) -> impl Bundle {
                         .into(),
                 ],
                 vec![
+                    InspectorFieldProps::new("time.spawn_delay_spread")
+                        .with_min(0.)
+                        .with_icon(ICON_TIME)
+                        .with_suffix("s")
+                        .into(),
+                ],
+                vec![
                     InspectorFieldProps::new("time.fixed_fps")
                         .u32_or_empty()
                         .with_placeholder("Unlimited")

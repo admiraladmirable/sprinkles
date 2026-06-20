@@ -211,6 +211,8 @@ impl Plugin for SprinklesPlugin {
 
         #[cfg(feature = "preset-textures")]
         textures::preset::register_preset_textures(app);
+        #[cfg(feature = "preset-textures")]
+        textures::preset::register_flipbook_textures(app);
 
         app.init_asset::<ParticlesAsset>()
             .init_asset_loader::<ParticlesAssetLoader>();
@@ -262,9 +264,9 @@ impl Plugin for SprinklesPlugin {
 pub use asset::{
     ColliderData, DrawOrder, DrawPassMaterial, EmitterAccelerations, EmitterCollision,
     EmitterCollisionMode, EmitterColors, EmitterData, EmitterDrawPass, EmitterEmission,
-    EmitterScale, EmitterTime, EmitterTrail, EmitterTurbulence, EmitterVelocities, ParticleFlags,
-    ParticleMesh, ParticlesColliderShape3D, ParticlesDimension, QuadOrientation, RibbonTrailShape,
-    SerializableAlphaMode, StandardParticleMaterial, TransformAlign,
+    EmitterScale, EmitterTime, EmitterTrail, EmitterTurbulence, EmitterVelocities, Flipbook,
+    ParticleFlags, ParticleMesh, ParticlesColliderShape3D, ParticlesDimension, QuadOrientation,
+    RibbonTrailShape, SerializableAlphaMode, StandardParticleMaterial, TransformAlign,
 };
 pub use material::ParticleMaterialExtension;
 pub use runtime::{

@@ -91,6 +91,30 @@ fn rot_z(a: f32) -> mat3x3<f32> {
     return mat3x3<f32>(vec3(c, s, 0.0), vec3(-s, c, 0.0), vec3(0.0, 0.0, 1.0));
 }
 
+#ifdef VERTEX_UVS_A
+fn apply_flipbook_uv(uv: vec2<f32>, age: f32, lifetime: f32) -> vec2<f32> {
+    if (emitter_uniforms.flipbook_enabled == 0u) {
+        return uv;
+    }
+
+    let age_ratio = clamp(select(0.0, age / lifetime, lifetime > 0.0), 0.0, 1.0);
+    let total_frames = max(emitter_uniforms.flipbook_frame_count, 1u);
+    let cols = max(emitter_uniforms.flipbook_columns, 1u);
+    let rows = max(emitter_uniforms.flipbook_rows, 1u);
+    let frame_float = max(age_ratio * f32(total_frames) * emitter_uniforms.flipbook_speed, 0.0);
+    let frame = u32(frame_float) % total_frames;
+    let col = frame % cols;
+    let row = rows - 1u - min(frame / cols, rows - 1u);
+    let tile_u = 1.0 / f32(cols);
+    let tile_v = 1.0 / f32(rows);
+
+    return vec2(
+        (f32(col) + uv.x) * tile_u,
+        (f32(row) + uv.y) * tile_v,
+    );
+}
+#endif
+
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
@@ -217,6 +241,10 @@ fn vertex(vertex: Vertex) -> VertexOutput {
         let color_lo = sorted_particles[idx_lo].color;
         let color_hi = sorted_particles[idx_hi].color;
         out.color = vertex.color * mix(color_lo, color_hi, seg_t);
+#endif
+
+#ifdef VERTEX_UVS_A
+        out.uv = apply_flipbook_uv(out.uv, head_particle.custom.x, head_particle.velocity.w);
 #endif
 
         return out;
@@ -412,6 +440,10 @@ fn vertex(vertex: Vertex) -> VertexOutput {
         }
 #endif
     }
+
+#ifdef VERTEX_UVS_A
+    out.uv = apply_flipbook_uv(out.uv, particle.custom.x, particle.velocity.w);
+#endif
 
 #ifdef VERTEX_COLORS
     out.color = vertex.color * particle.color;

@@ -8,11 +8,11 @@ use bevy::reflect::ReflectRef;
 use bevy::tasks::IoTaskPool;
 
 use bevy_sprinkles::prelude::*;
-use bevy_sprinkles::textures::preset::{PresetTexture, TextureRef};
+use bevy_sprinkles::textures::preset::{FLIPBOOK_TEXTURES, PresetTexture, TextureRef};
 
 use crate::state::EditorState;
 use crate::ui::components::binding::{
-    FieldBinding, get_inspecting_emitter, resolve_variant_field_ref,
+    EmitterWriter, FieldBinding, get_inspecting_emitter, resolve_variant_field_ref,
 };
 use crate::ui::tokens::{
     BORDER_COLOR, CORNER_RADIUS, FONT_PATH, TEXT_BODY_COLOR, TEXT_MUTED_COLOR, TEXT_SIZE_SM,
@@ -79,6 +79,14 @@ struct PresetButton {
 }
 
 #[derive(Component)]
+struct FlipbookPresetButton {
+    variant_edit: Entity,
+    embedded_path: &'static str,
+    columns: u32,
+    rows: u32,
+}
+
+#[derive(Component)]
 struct SelectFileButton(Entity);
 
 #[derive(Component)]
@@ -109,6 +117,7 @@ struct TextureFilePickResult {
 
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_preset_click)
+        .add_observer(handle_flipbook_preset_click)
         .add_observer(handle_select_file_click)
         .add_systems(
             Update,
@@ -125,6 +134,13 @@ fn is_texture_ref_variant_edit(entity: Entity, bindings: &Query<&FieldBinding>) 
     bindings
         .get(entity)
         .map(|b| b.kind == FieldKind::TextureRef)
+        .unwrap_or(false)
+}
+
+fn is_base_color_texture_edit(entity: Entity, bindings: &Query<&FieldBinding>) -> bool {
+    bindings
+        .get(entity)
+        .map(|b| b.path() == "draw_pass.material" && b.field_name() == Some("base_color_texture"))
         .unwrap_or(false)
 }
 
@@ -259,15 +275,11 @@ fn spawn_content_for_variant(
     match variant {
         TextureVariant::None => {}
         TextureVariant::Preset => {
-            let current_preset = current_texture.and_then(|t| match t {
-                TextureRef::Preset(p) => Some(p),
-                _ => None,
-            });
             spawn_preset_grid(
                 commands,
                 container,
                 variant_edit,
-                current_preset,
+                current_texture,
                 asset_server,
             );
         }
@@ -288,9 +300,17 @@ fn spawn_preset_grid(
     commands: &mut Commands,
     container: Entity,
     variant_edit: Entity,
-    current_preset: Option<&PresetTexture>,
+    current_texture: Option<&TextureRef>,
     asset_server: &AssetServer,
 ) {
+    let current_preset = current_texture.and_then(|t| match t {
+        TextureRef::Preset(p) => Some(p),
+        _ => None,
+    });
+    let current_asset = current_texture.and_then(|t| match t {
+        TextureRef::Asset(p) => Some(p.as_str()),
+        _ => None,
+    });
     let scroll_container = commands
         .spawn((
             TexturePresetScroll,
@@ -354,6 +374,46 @@ fn spawn_preset_grid(
         commands.entity(grid).add_child(btn);
     }
 
+    for &(_, embedded_path, columns, rows) in FLIPBOOK_TEXTURES {
+        let is_active = current_asset == Some(embedded_path);
+        let variant = if is_active {
+            ButtonVariant::Active
+        } else {
+            ButtonVariant::Ghost
+        };
+
+        let btn = commands
+            .spawn((
+                FlipbookPresetButton {
+                    variant_edit,
+                    embedded_path,
+                    columns,
+                    rows,
+                },
+                button_base(variant, ButtonSize::MD, false, FlexDirection::Row),
+            ))
+            .insert(Node {
+                aspect_ratio: Some(1.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(px(4.0)),
+                overflow: Overflow::clip(),
+                ..default()
+            })
+            .with_child((
+                ImageNode::new(asset_server.load(embedded_path)),
+                Node {
+                    width: percent(100),
+                    height: percent(100),
+                    border_radius: BorderRadius::all(px(4.0)),
+                    ..default()
+                },
+            ))
+            .id();
+
+        commands.entity(grid).add_child(btn);
+    }
+
     let scrollbar = commands
         .spawn((
             TextureGridScrollbar { scroll_container },
@@ -405,7 +465,7 @@ fn spawn_footnote(commands: &mut Commands, parent: Entity, asset_server: &AssetS
 
     let text_id = commands
         .spawn((
-            Text::new("Textures by "),
+            Text::new("Textures by Kenney and "),
             TextFont {
                 font: font.clone(),
                 font_size: TEXT_SIZE_SM,
@@ -417,7 +477,7 @@ fn spawn_footnote(commands: &mut Commands, parent: Entity, asset_server: &AssetS
 
     let link_span = commands
         .spawn((
-            TextSpan::new("Kenney"),
+            TextSpan::new("Brackeys VFX Bundle contributors"),
             TextFont {
                 font: font.clone(),
                 font_size: TEXT_SIZE_SM,
@@ -455,7 +515,7 @@ fn spawn_footnote(commands: &mut Commands, parent: Entity, asset_server: &AssetS
         text_id,
         1,
         link_span,
-        "https://kenney.nl".to_string(),
+        "https://brackeys.com/resources/".to_string(),
         link_color,
     );
 
@@ -640,6 +700,7 @@ fn handle_preset_click(
     trigger: On<ButtonClickEvent>,
     mut commands: Commands,
     preset_buttons: Query<(Entity, &PresetButton)>,
+    flipbook_buttons: Query<(Entity, &FlipbookPresetButton)>,
     mut configs: Query<&mut VariantEditConfig, With<EditorVariantEdit>>,
     mut button_styles: Query<(&mut BackgroundColor, &mut BorderColor, &mut ButtonVariant)>,
 ) {
@@ -666,10 +727,98 @@ fn handle_preset_click(
         }
     }
 
+    for (entity, btn) in &flipbook_buttons {
+        if btn.variant_edit != variant_edit {
+            continue;
+        }
+        if let Ok((mut bg, mut border, mut variant)) = button_styles.get_mut(entity) {
+            *variant = ButtonVariant::Ghost;
+            set_button_variant(ButtonVariant::Ghost, &mut bg, &mut border);
+        }
+    }
+
     commands.trigger(TextureEditCommitEvent {
         entity: variant_edit,
         value,
     });
+
+    if let Ok(mut config) = configs.get_mut(variant_edit) {
+        config.selected_index = TextureVariant::Preset.index();
+    }
+}
+
+fn handle_flipbook_preset_click(
+    trigger: On<ButtonClickEvent>,
+    mut commands: Commands,
+    mut emitter_writer: EmitterWriter,
+    flipbook_buttons: Query<(Entity, &FlipbookPresetButton)>,
+    preset_buttons: Query<(Entity, &PresetButton)>,
+    mut configs: Query<&mut VariantEditConfig, With<EditorVariantEdit>>,
+    mut button_styles: Query<(&mut BackgroundColor, &mut BorderColor, &mut ButtonVariant)>,
+    bindings: Query<&FieldBinding>,
+) {
+    let Ok((_, flipbook_btn)) = flipbook_buttons.get(trigger.entity) else {
+        return;
+    };
+
+    let variant_edit = flipbook_btn.variant_edit;
+    let clicked_path = flipbook_btn.embedded_path;
+    let columns = flipbook_btn.columns;
+    let rows = flipbook_btn.rows;
+    let value = Some(TextureRef::Asset(clicked_path.to_string()));
+
+    for (entity, btn) in &preset_buttons {
+        if btn.variant_edit != variant_edit {
+            continue;
+        }
+        if let Ok((mut bg, mut border, mut variant)) = button_styles.get_mut(entity) {
+            *variant = ButtonVariant::Ghost;
+            set_button_variant(ButtonVariant::Ghost, &mut bg, &mut border);
+        }
+    }
+
+    for (entity, btn) in &flipbook_buttons {
+        if btn.variant_edit != variant_edit {
+            continue;
+        }
+        if let Ok((mut bg, mut border, mut variant)) = button_styles.get_mut(entity) {
+            if btn.embedded_path == clicked_path {
+                *variant = ButtonVariant::Active;
+                set_button_variant(ButtonVariant::Active, &mut bg, &mut border);
+            } else {
+                *variant = ButtonVariant::Ghost;
+                set_button_variant(ButtonVariant::Ghost, &mut bg, &mut border);
+            }
+        }
+    }
+
+    commands.trigger(TextureEditCommitEvent {
+        entity: variant_edit,
+        value,
+    });
+
+    if is_base_color_texture_edit(variant_edit, &bindings) {
+        emitter_writer.modify_emitter(|emitter| {
+            let speed = emitter
+                .draw_pass
+                .flipbook
+                .as_ref()
+                .map_or(1.0, |flipbook| flipbook.speed);
+            let flipbook = Flipbook {
+                columns,
+                rows,
+                frame_count: None,
+                speed,
+            };
+
+            if emitter.draw_pass.flipbook.as_ref() == Some(&flipbook) {
+                return false;
+            }
+
+            emitter.draw_pass.flipbook = Some(flipbook);
+            true
+        });
+    }
 
     if let Ok(mut config) = configs.get_mut(variant_edit) {
         config.selected_index = TextureVariant::Preset.index();

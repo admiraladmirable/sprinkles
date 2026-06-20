@@ -26,12 +26,17 @@ pub(super) fn bind_text_inputs(
     assets: Res<Assets<ParticlesAsset>>,
     editor_data: Res<EditorData>,
     tracker: Res<InspectedEmitterTracker>,
+    dirty_state: Res<crate::state::DirtyState>,
     new_bindings: Query<Entity, Added<FieldBinding>>,
     new_bound: Query<Entity, Added<BoundTo>>,
     bindings: Query<&FieldBinding>,
     mut text_edits: Query<(&BoundTo, &mut TextInputQueue), With<EditorTextEdit>>,
 ) {
-    if !tracker.is_changed() && new_bindings.is_empty() && new_bound.is_empty() {
+    if !tracker.is_changed()
+        && !dirty_state.is_changed()
+        && new_bindings.is_empty()
+        && new_bound.is_empty()
+    {
         return;
     }
 

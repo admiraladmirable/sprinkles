@@ -14,7 +14,7 @@ workspace = true
 
 [features]
 default = ["preset-textures"]
-preset-textures = []
+preset-textures = ["bevy/png", "bevy/tga"]
 
 [dependencies]
 bevy = { workspace = true }
@@ -27,4 +27,3 @@ paste = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time = "1"
-

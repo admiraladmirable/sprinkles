@@ -5,6 +5,7 @@ mod collision;
 mod colors;
 mod draw_pass;
 mod emission;
+mod flipbook;
 mod particle_flags;
 mod project_properties;
 mod scale;
@@ -47,6 +48,7 @@ pub fn plugin(app: &mut App) {
             time::plugin,
             emission::plugin,
             draw_pass::plugin,
+            flipbook::plugin,
             scale::plugin,
             angle::plugin,
             colors::plugin,
@@ -57,9 +59,8 @@ pub fn plugin(app: &mut App) {
             collision::plugin,
             sub_emitter::plugin,
             particle_flags::plugin,
-            collider_properties::plugin,
         ))
-        .add_plugins(project_properties::plugin)
+        .add_plugins((collider_properties::plugin, project_properties::plugin))
         .add_systems(
             Update,
             (
@@ -194,6 +195,7 @@ fn setup_inspector_panel(
                             .with_children(|emitter_content| {
                                 emitter_content.spawn(time::time_section(&asset_server));
                                 emitter_content.spawn(draw_pass::draw_pass_section(&asset_server));
+                                emitter_content.spawn(draw_pass::material_section(&asset_server));
                                 emitter_content.spawn(emission::emission_section(&asset_server));
                                 emitter_content.spawn(scale::scale_section(&asset_server));
                                 emitter_content.spawn(colors::colors_section(&asset_server));

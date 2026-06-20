@@ -40,6 +40,16 @@ pub struct ParticleEmitterUniforms {
     pub transform_align: u32,
     /// Baked trail thickness curve samples.
     pub trail_thickness_curve: [f32; TRAIL_THICKNESS_CURVE_SAMPLES],
+    /// Whether flipbook animation is active (`0` = disabled, `1` = enabled).
+    pub flipbook_enabled: u32,
+    /// Number of columns in the flipbook spritesheet grid.
+    pub flipbook_columns: u32,
+    /// Number of rows in the flipbook spritesheet grid.
+    pub flipbook_rows: u32,
+    /// Total number of animation frames in the flipbook.
+    pub flipbook_frame_count: u32,
+    /// Playback speed multiplier for flipbook animation.
+    pub flipbook_speed: f32,
 }
 
 impl Default for ParticleEmitterUniforms {
@@ -52,6 +62,11 @@ impl Default for ParticleEmitterUniforms {
             trail_size: 1,
             transform_align: 0,
             trail_thickness_curve: [1.0; TRAIL_THICKNESS_CURVE_SAMPLES],
+            flipbook_enabled: 0,
+            flipbook_columns: 1,
+            flipbook_rows: 1,
+            flipbook_frame_count: 1,
+            flipbook_speed: 1.0,
         }
     }
 }

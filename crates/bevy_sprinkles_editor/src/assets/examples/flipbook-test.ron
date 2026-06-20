@@ -1,0 +1,47 @@
+(
+    sprinkles_version: "0.2",
+    name: "Flipbook Test",
+    dimension: D3,
+    emitters: [
+        (
+            name: "Explosion",
+            time: (
+                lifetime: 1.5,
+                one_shot: true,
+                explosiveness: 1.0,
+                fixed_fps: 60,
+            ),
+            draw_pass: (
+                mesh: Quad(
+                    size: (2.0, 2.0),
+                ),
+                material: Standard((
+                    base_color: (1.0, 1.0, 1.0, 1.0),
+                    base_color_texture: Some(Asset("embedded://bevy_sprinkles/textures/assets/brackeys_vfx_bundle/flipbooks/explosion_6x5.png")),
+                    alpha_mode: Add,
+                    unlit: true,
+                    perceptual_roughness: 0.5,
+                    reflectance: 0.5,
+                )),
+                shadow_caster: false,
+                transform_align: Some(Billboard),
+                flipbook: Some((
+                    columns: 6,
+                    rows: 5,
+                )),
+            ),
+            emission: (
+                shape: Sphere(
+                    radius: 1.0,
+                ),
+                particles_amount: 12,
+            ),
+            scale: (
+                range: (
+                    min: 1.0,
+                    max: 2.0,
+                ),
+            ),
+        ),
+    ],
+)

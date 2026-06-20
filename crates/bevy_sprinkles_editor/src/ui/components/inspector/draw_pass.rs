@@ -29,6 +29,9 @@ pub struct TrailMeshAlert;
 #[derive(Component)]
 struct DrawPassSection;
 
+#[derive(Component)]
+pub struct MaterialSection;
+
 pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
@@ -43,18 +46,11 @@ pub fn draw_pass_section(asset_server: &AssetServer) -> impl Bundle {
             InspectorSection::new(
                 "Draw pass",
                 vec![
-                    vec![
-                        InspectorItem::Variant {
-                            path: "draw_pass.mesh".into(),
-                            props: VariantEditProps::new("draw_pass.mesh")
-                                .with_variants(mesh_variants()),
-                        },
-                        InspectorItem::Variant {
-                            path: "draw_pass.material".into(),
-                            props: VariantEditProps::new("draw_pass.material")
-                                .with_variants(material_variants()),
-                        },
-                    ],
+                    vec![InspectorItem::Variant {
+                        path: "draw_pass.mesh".into(),
+                        props: VariantEditProps::new("draw_pass.mesh")
+                            .with_variants(mesh_variants()),
+                    }],
                     vec![
                         InspectorFieldProps::new("draw_pass.draw_order")
                             .combobox(combobox_options_from_reflect::<DrawOrder>())
@@ -76,6 +72,23 @@ pub fn draw_pass_section(asset_server: &AssetServer) -> impl Bundle {
                             .into(),
                     ],
                 ],
+            ),
+            asset_server,
+        ),
+    )
+}
+
+pub fn material_section(asset_server: &AssetServer) -> impl Bundle {
+    (
+        MaterialSection,
+        inspector_section(
+            InspectorSection::new(
+                "Material",
+                vec![vec![InspectorItem::Variant {
+                    path: "draw_pass.material".into(),
+                    props: VariantEditProps::new("draw_pass.material")
+                        .with_variants(material_variants()),
+                }]],
             ),
             asset_server,
         ),
