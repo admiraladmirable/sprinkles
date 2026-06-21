@@ -1,6 +1,6 @@
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
-use bevy::text::{FontFeatureTag, FontFeatures};
+use bevy::text::{FontFeatureTag, FontFeatures, FontSourceTemplate};
 use bevy_sprinkles::prelude::*;
 
 use crate::state::PlaybackSeekEvent;
@@ -16,25 +16,25 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_seekbar_drag);
 }
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct EditorSeekbar;
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarElapsed;
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarDuration;
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarHitbox;
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarTrack;
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarFill;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct SeekbarDragState {
     pub dragging: bool,
     pub drag_time: f32,
@@ -46,87 +46,81 @@ pub struct SeekbarDragEvent {
     pub value: f32,
 }
 
-pub fn seekbar(asset_server: &AssetServer) -> impl Bundle {
-    let font: Handle<Font> = asset_server.load(FONT_PATH);
+pub fn seekbar() -> impl Scene {
     let tabular_figures: FontFeatures = [FontFeatureTag::TABULAR_FIGURES].into();
 
-    (
-        EditorSeekbar,
+    bsn! {
+        EditorSeekbar
         Node {
-            align_items: AlignItems::Center,
+            align_items: { AlignItems::Center },
             column_gap: px(6),
-            ..default()
-        },
-        children![
+        }
+        Children [
             (
-                SeekbarElapsed,
-                Text::new("0.00"),
+                SeekbarElapsed
+                Text("0.00")
                 TextFont {
-                    font: font.clone().into(),
-                    font_size: LABEL_SIZE.into(),
-                    font_features: tabular_figures.clone(),
-                    weight: FontWeight::MEDIUM,
-                    ..default()
-                },
-                TextColor(TEXT_MUTED_COLOR.into()),
+                    font: { FontSourceTemplate::Handle(FONT_PATH.into()) },
+                    font_size: LABEL_SIZE,
+                    font_features: { tabular_figures.clone() },
+                    weight: { FontWeight::MEDIUM },
+                }
+                TextColor({ TEXT_MUTED_COLOR })
             ),
             (
                 Node {
                     width: px(SEEKBAR_WIDTH),
                     height: px(SEEKBAR_HEIGHT),
-                    ..default()
-                },
-                children![
+                }
+                Children [
                     (
-                        SeekbarTrack,
+                        SeekbarTrack
                         Node {
                             width: percent(100),
                             height: percent(100),
-                            border_radius: BorderRadius::all(Val::Percent(100.0)),
-                            overflow: Overflow::clip(),
-                            ..default()
-                        },
-                        BackgroundColor(tailwind::ZINC_700.into()),
-                        children![(
-                            SeekbarFill,
-                            Node {
-                                width: percent(0),
-                                height: percent(100),
-                                border_radius: BorderRadius::all(Val::Percent(100.0)),
-                                ..default()
-                            },
-                            BackgroundColor(tailwind::ZINC_200.into()),
-                        )],
+                            border_radius: { BorderRadius::all(Val::Percent(100.0)) },
+                            overflow: { Overflow::clip() },
+                        }
+                        BackgroundColor({ tailwind::ZINC_700 })
+                        Children [
+                            (
+                                SeekbarFill
+                                Node {
+                                    width: percent(0),
+                                    height: percent(100),
+                                    border_radius: { BorderRadius::all(Val::Percent(100.0)) },
+                                }
+                                BackgroundColor({ tailwind::ZINC_200 })
+                            )
+                        ]
                     ),
                     (
-                        SeekbarHitbox,
-                        SeekbarDragState::default(),
+                        SeekbarHitbox
+                        SeekbarDragState
                         Node {
-                            position_type: PositionType::Absolute,
+                            position_type: { PositionType::Absolute },
                             width: px(SEEKBAR_WIDTH),
                             height: px(SEEKBAR_HEIGHT * 3.),
                             top: px(-SEEKBAR_HEIGHT),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
+                            justify_content: { JustifyContent::Center },
+                            align_items: { AlignItems::Center },
+                        }
                     ),
-                ],
+                ]
             ),
             (
-                SeekbarDuration,
-                Text::new("0.00s"),
+                SeekbarDuration
+                Text("0.00s")
                 TextFont {
-                    font: font.into(),
-                    font_size: LABEL_SIZE.into(),
-                    font_features: tabular_figures,
-                    weight: FontWeight::MEDIUM,
-                    ..default()
-                },
-                TextColor(TEXT_MUTED_COLOR.into()),
+                    font: { FontSourceTemplate::Handle(FONT_PATH.into()) },
+                    font_size: LABEL_SIZE,
+                    font_features: { tabular_figures },
+                    weight: { FontWeight::MEDIUM },
+                }
+                TextColor({ TEXT_MUTED_COLOR })
             ),
-        ],
-    )
+        ]
+    }
 }
 
 fn format_time(seconds: f32) -> String {

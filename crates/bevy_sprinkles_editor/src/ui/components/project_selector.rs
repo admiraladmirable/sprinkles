@@ -59,13 +59,13 @@ pub fn plugin(app: &mut App) {
         );
 }
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 pub struct ProjectSelector;
 
 #[derive(Component)]
 struct ProjectSelectorTrigger(Entity);
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 struct ProjectSelectorState {
     popover: Option<Entity>,
     initialized: bool,
@@ -110,12 +110,12 @@ struct NewProjectDialogState {
     focused: bool,
 }
 
-pub fn project_selector() -> impl Bundle {
-    (
-        ProjectSelector,
-        ProjectSelectorState::default(),
-        Node::default(),
-    )
+pub fn project_selector() -> impl Scene {
+    bsn! {
+        ProjectSelector
+        ProjectSelectorState
+        Node
+    }
 }
 
 fn setup_project_selector(

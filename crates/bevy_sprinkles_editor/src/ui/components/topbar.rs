@@ -53,14 +53,14 @@ fn topbar_right() -> impl Scene {
     }
 }
 
-pub fn spawn_topbar(commands: &mut Commands, asset_server: &AssetServer, parent: Entity) {
+pub fn spawn_topbar(commands: &mut Commands, parent: Entity) {
     let bar = commands.spawn_scene(topbar()).insert(ChildOf(parent)).id();
 
-    let selector = commands.spawn(project_selector()).id();
+    let selector = commands.spawn_scene(project_selector()).id();
     commands.entity(bar).add_children(&[selector]);
 
     let right = commands.spawn_scene(topbar_right()).insert(ChildOf(bar)).id();
-    commands.spawn(seekbar(asset_server)).insert(ChildOf(right));
+    commands.spawn_scene(seekbar()).insert(ChildOf(right));
     commands
         .spawn_scene(playback_controls())
         .insert(ChildOf(right));

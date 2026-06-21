@@ -58,7 +58,7 @@ impl Plugin for EditorUiPlugin {
     }
 }
 
-fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_ui(mut commands: Commands) {
     let root = commands
         .spawn(Node {
             width: percent(100),
@@ -68,7 +68,7 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .id();
 
-    spawn_topbar(&mut commands, &asset_server, root);
+    spawn_topbar(&mut commands, root);
 
     let main_row = commands
         .spawn((
